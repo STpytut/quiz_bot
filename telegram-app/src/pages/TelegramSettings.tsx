@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Box,
   Typography,
@@ -9,18 +10,22 @@ import {
   Card,
   CardContent,
   Chip,
+  IconButton,
 } from '@mui/material'
 import {
   Email as EmailIcon,
   Link as LinkIcon,
   CheckCircle as CheckIcon,
+  ArrowBack as BackIcon,
 } from '@mui/icons-material'
 import { useTelegram } from '../hooks/useTelegram'
 import { useTelegramAuth } from '../hooks/useTelegramAuth'
+import { supabase } from '../lib/supabase'
 
 export default function TelegramSettings() {
+  const navigate = useNavigate()
   const { tgUser, theme } = useTelegram()
-  const { user, bindEmail, signOut } = useTelegramAuth()
+  const { user, signOut } = useTelegramAuth()
   const [showEmailForm, setShowEmailForm] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -47,11 +52,40 @@ export default function TelegramSettings() {
     setLoading(true)
 
     try {
-      await bindEmail(email, password)
+      // Вместо создания нового аккаунта, обновляем email в текущем
+      const { error: updateError } = await supabase.auth.updateUser({
+        email: email,
+        password: password,
+      })
+
+      if (updateError) {
+        // Если email уже занят, пробуем войти
+        if (updateError.message.includes('already registered')) {
+          // Пробуем войти с этим email
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          })
+          
+          if (signInError) {
+            setError('Этот email уже зарегистрирован. Попробуйте войти с этим email в web-версии и привязать Telegram оттуда.')
+            setLoading(false)
+            return
+          }
+        } else {
+          throw updateError
+        }
+      }
+
       setSuccess(true)
       setShowEmailForm(false)
       setEmail('')
       setPassword('')
+      
+      // Обновляем страницу через 2 секунды
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Ошибка при привязке email'
       setError(message)
@@ -62,11 +96,16 @@ export default function TelegramSettings() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', color: theme.textColor }}>
-        Настройки
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+        <IconButton onClick={() => navigate(-1)} sx={{ color: theme.textColor }}>
+          <BackIcon />
+        </IconButton>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.textColor }}>
+          Настройки
+        </Typography>
+      </Box>
 
-      <Card sx={{ mb: 3, backgroundColor: theme.secondaryBgColor }}>
+      <Card sx={{ mb: 3, backgroundColor: theme.secondaryBgColor, border: `1px solid ${theme.textColor}20` }}>
         <CardContent>
           <Typography variant="h6" gutterBottom sx={{ color: theme.textColor }}>
             Профиль Telegram
@@ -87,7 +126,7 @@ export default function TelegramSettings() {
         </CardContent>
       </Card>
 
-      <Card sx={{ mb: 3, backgroundColor: theme.secondaryBgColor }}>
+      <Card sx={{ mb: 3, backgroundColor: theme.secondaryBgColor, border: `1px solid ${theme.textColor}20` }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h6" sx={{ color: theme.textColor }}>
@@ -229,7 +268,7 @@ export default function TelegramSettings() {
         </CardContent>
       </Card>
 
-      <Card sx={{ backgroundColor: theme.secondaryBgColor }}>
+      <Card sx={{ backgroundColor: theme.secondaryBgColor, border: `1px solid ${theme.textColor}20` }}>
         <CardContent>
           <Typography variant="h6" gutterBottom sx={{ color: theme.textColor }}>
             Дополнительно
