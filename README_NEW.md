@@ -2,7 +2,7 @@
 
 Платформа для создания интерактивных викторин с AI-генерацией из текста и Telegram Mini App.
 
-## 🎯 Нов Features
+## 🎯 New Features
 
 ### 1. **AI-Generated Quizzes**
 - Upload `.docx` or `.txt` files
@@ -13,10 +13,18 @@
 
 ### 2. **Telegram Mini App**
 - Standalone Telegram application
-- Telegram authentication
-- Email binding for cross-platform access
+- **Login with Telegram ID** - no email required!
+- Immediate access to create quizzes
+- **Optional email binding** for cross-platform sync
+- Native Telegram UI theme adaptation
 - Create quizzes from within Telegram
 - View your quizzes on all devices
+
+### 3. **Account Linking**
+- **Web → Telegram**: Link Telegram in Settings page
+- **Telegram → Web**: Bind email in Telegram Settings
+- Sync quizzes across platforms
+- Single account for both platforms
 
 ---
 
@@ -226,15 +234,18 @@ Run these in Supabase SQL Editor:
 - ✅ QR code sharing
 - ✅ Detailed statistics
 - ✅ Google/Email authentication
+- ✅ **Link Telegram account** in Settings
 
 ### Telegram Mini App
 
-- ✅ Telegram authentication
-- ✅ Email binding for cross-platform access
+- ✅ **Login with Telegram ID** (no email required!)
+- ✅ Create quizzes immediately after login
+- ✅ **Optional email binding** for cross-platform sync
 - ✅ Create quizzes manually
 - ✅ Generate quizzes from text with AI
 - ✅ View your quizzes
 - ✅ Native Telegram UI integration
+- ✅ Settings page with account management
 
 ---
 
@@ -275,8 +286,27 @@ Run these in Supabase SQL Editor:
 1. Open Telegram
 2. Find your bot
 3. Open Mini App
-4. Bind email (first time only)
-5. Create quizzes or view existing ones
+4. **Automatic login with Telegram ID**
+5. Start creating quizzes immediately!
+6. (Optional) Go to Settings → Bind email for web access
+
+### Linking Accounts
+
+**Option 1: From Web to Telegram**
+1. Login to web version
+2. Go to Settings (⚙️ icon)
+3. Click "Bind Telegram"
+4. Enter your Telegram username
+5. Open Telegram bot and send `/link`
+6. Accounts linked!
+
+**Option 2: From Telegram to Web**
+1. Login to Telegram Mini App
+2. Click Settings icon (⚙️)
+3. Click "Bind email"
+4. Enter email and password
+5. Now login to web with same email
+6. See same quizzes on both platforms!
 
 ---
 
