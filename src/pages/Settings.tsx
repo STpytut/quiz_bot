@@ -94,12 +94,15 @@ export default function Settings() {
 
       if (existing) {
         // Обновляем существующую запись
-        const { error: updateError } = await supabase
-          .from('telegram_auth_links')
-          .update({
-            telegram_username: username,
-            is_verified: false,
-          })
+      const { error: updateError } = await supabase
+        .from('telegram_auth_links')
+        .upsert({
+          user_id: user!.id,
+          telegram_username: username,
+          is_verified: false,
+        }, {
+          onConflict: 'telegram_username'
+        })
           .eq('user_id', user!.id)
 
         if (updateError) throw updateError
