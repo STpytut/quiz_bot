@@ -83,21 +83,38 @@ export default function Settings() {
     setError(null)
 
     try {
-      // Здесь должна быть логика верификации через Telegram бота
-      // Пока просто сохраняем username
       const username = telegramUsername.replace('@', '')
       
-      const { error: updateError } = await supabase
+      // Проверяем, есть ли уже привязка
+      const { data: existing } = await supabase
         .from('telegram_auth_links')
-        .upsert({
-          user_id: user!.id,
-          telegram_username: username,
-          is_verified: false,
-        }, {
-          onConflict: 'user_id'
-        })
+        .select('*')
+        .eq('user_id', user!.id)
+        .single()
 
-      if (updateError) throw updateError
+      if (existing) {
+        // Обновляем существующую запись
+        const { error: updateError } = await supabase
+          .from('telegram_auth_links')
+          .update({
+            telegram_username: username,
+            is_verified: false,
+          })
+          .eq('user_id', user!.id)
+
+        if (updateError) throw updateError
+      } else {
+        // Создаем новую запись (telegram_id будет добавлен позже через бота)
+        const { error: insertError } = await supabase
+          .from('telegram_auth_links')
+          .insert({
+            user_id: user!.id,
+            telegram_username: username,
+            is_verified: false,
+          })
+
+        if (insertError) throw insertError
+      }
 
       setShowBindDialog(false)
       setTelegramUsername('')
