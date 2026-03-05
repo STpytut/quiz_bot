@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -13,85 +13,168 @@ import {
   IconButton,
 } from '@mui/material'
 import {
-  Email as EmailIcon,
   Link as LinkIcon,
   CheckCircle as CheckIcon,
   ArrowBack as BackIcon,
+  ContentCopy as CopyIcon,
 } from '@mui/icons-material'
 import { useTelegram } from '../hooks/useTelegram'
 import { useTelegramAuth } from '../hooks/useTelegramAuth'
 import { supabase } from '../lib/supabase'
 
+function generateCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return code
+}
+
 export default function TelegramSettings() {
   const navigate = useNavigate()
   const { tgUser, theme } = useTelegram()
   const { user, signOut } = useTelegramAuth()
-  const [showEmailForm, setShowEmailForm] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
+
+  const [linkCode, setLinkCode] = useState<string | null>(null)
+  const [codeLoading, setCodeLoading] = useState(false)
+  const [enterCode, setEnterCode] = useState('')
+  const [enterCodeLoading, setEnterCodeLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [isLinked, setIsLinked] = useState(false)
+  const [linkedEmail, setLinkedEmail] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
-  const hasEmail = user?.email && !user.email.includes('@quizmaster.virtual')
-
-  const handleBindEmail = async () => {
-    setError(null)
-    setSuccess(false)
-
-    if (!email.trim()) {
-      setError('Введите email')
-      return
+  useEffect(() => {
+    if (user) {
+      checkLinkStatus()
     }
+  }, [user])
 
-    if (!password.trim() || password.length < 6) {
-      setError('Пароль должен быть минимум 6 символов')
-      return
-    }
-
-    setLoading(true)
+  const checkLinkStatus = async () => {
+    if (!user) return
 
     try {
-      // Вместо создания нового аккаунта, обновляем email в текущем
-      const { error: updateError } = await supabase.auth.updateUser({
-        email: email,
-        password: password,
-      })
+      const { data } = await supabase
+        .from('telegram_auth_links')
+        .select('email, is_verified')
+        .eq('user_id', user.id)
+        .single()
 
-      if (updateError) {
-        // Если email уже занят, пробуем войти
-        if (updateError.message.includes('already registered')) {
-          // Пробуем войти с этим email
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          })
-          
-          if (signInError) {
-            setError('Этот email уже зарегистрирован. Попробуйте войти с этим email в web-версии и привязать Telegram оттуда.')
-            setLoading(false)
-            return
-          }
-        } else {
-          throw updateError
-        }
+      if (data?.is_verified && data?.email) {
+        setIsLinked(true)
+        setLinkedEmail(data.email)
       }
+    } catch {
+      // Not linked yet
+    }
+  }
 
-      setSuccess(true)
-      setShowEmailForm(false)
-      setEmail('')
-      setPassword('')
-      
-      // Обновляем страницу через 2 секунды
-      setTimeout(() => {
-        window.location.reload()
-      }, 2000)
+  // Generate a code for the web user to enter
+  const handleGenerateCode = async () => {
+    if (!user) return
+
+    setCodeLoading(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      // Delete any existing codes for this user
+      await supabase
+        .from('linking_codes')
+        .delete()
+        .eq('user_id', user.id)
+
+      const code = generateCode()
+
+      const { error: insertError } = await supabase
+        .from('linking_codes')
+        .insert({
+          code,
+          user_id: user.id,
+          platform: 'telegram',
+        })
+
+      if (insertError) throw insertError
+
+      setLinkCode(code)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Ошибка при привязке email'
+      const message = err instanceof Error ? err.message : 'Ошибка генерации кода'
       setError(message)
     } finally {
-      setLoading(false)
+      setCodeLoading(false)
     }
+  }
+
+  const handleCopyCode = async () => {
+    if (!linkCode) return
+    try {
+      await navigator.clipboard.writeText(linkCode)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Fallback for Telegram WebApp
+      const textArea = document.createElement('textarea')
+      textArea.value = linkCode
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  // Enter a code generated by web user
+  const handleEnterCode = async () => {
+    if (!user || !enterCode.trim()) return
+
+    setEnterCodeLoading(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const { data, error: rpcError } = await supabase
+        .rpc('link_accounts', {
+          p_code: enterCode.trim().toUpperCase(),
+          p_current_user_id: user.id,
+        })
+
+      if (rpcError) throw rpcError
+
+      const result = data as { success: boolean; error?: string; quizzes_moved?: number }
+
+      if (!result.success) {
+        setError(result.error || 'Неизвестная ошибка')
+        return
+      }
+
+      setSuccess(`Аккаунты связаны! Перенесено викторин: ${result.quizzes_moved || 0}`)
+      setEnterCode('')
+      setIsLinked(true)
+
+      // Reload after short delay
+      setTimeout(() => window.location.reload(), 2000)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Ошибка при привязке'
+      setError(message)
+    } finally {
+      setEnterCodeLoading(false)
+    }
+  }
+
+  const inputSx = {
+    '& .MuiOutlinedInput-root': {
+      backgroundColor: theme.secondaryBgColor,
+      color: theme.textColor,
+    },
+    '& .MuiInputLabel-root': {
+      color: theme.textColor,
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderColor: `${theme.textColor}40`,
+    },
   }
 
   return (
@@ -105,176 +188,163 @@ export default function TelegramSettings() {
         </Typography>
       </Box>
 
+      {/* Profile card */}
       <Card sx={{ mb: 3, backgroundColor: theme.secondaryBgColor, border: `1px solid ${theme.textColor}20` }}>
         <CardContent>
           <Typography variant="h6" gutterBottom sx={{ color: theme.textColor }}>
             Профиль Telegram
           </Typography>
-          <Box sx={{ mb: 2 }}>
+          <Typography variant="body2" sx={{ color: theme.textColor, opacity: 0.7 }}>
+            Имя: {tgUser?.first_name} {tgUser?.last_name}
+          </Typography>
+          {tgUser?.username && (
             <Typography variant="body2" sx={{ color: theme.textColor, opacity: 0.7 }}>
-              Имя: {tgUser?.first_name} {tgUser?.last_name}
+              Username: @{tgUser.username}
             </Typography>
-            {tgUser?.username && (
-              <Typography variant="body2" sx={{ color: theme.textColor, opacity: 0.7 }}>
-                Username: @{tgUser.username}
-              </Typography>
-            )}
-            <Typography variant="body2" sx={{ color: theme.textColor, opacity: 0.7 }}>
-              ID: {tgUser?.id}
-            </Typography>
-          </Box>
+          )}
         </CardContent>
       </Card>
 
+      {/* Account linking card */}
       <Card sx={{ mb: 3, backgroundColor: theme.secondaryBgColor, border: `1px solid ${theme.textColor}20` }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h6" sx={{ color: theme.textColor }}>
-              Email для синхронизации
+              Привязка аккаунта
             </Typography>
-            {hasEmail ? (
-              <Chip
-                icon={<CheckIcon />}
-                label="Привязан"
-                color="success"
-                size="small"
-              />
+            {isLinked ? (
+              <Chip icon={<CheckIcon />} label="Привязан" color="success" size="small" />
             ) : (
-              <Chip
-                icon={<LinkIcon />}
-                label="Не привязан"
-                color="default"
-                size="small"
-              />
+              <Chip icon={<LinkIcon />} label="Не привязан" color="default" size="small" />
             )}
           </Box>
 
-          {hasEmail ? (
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+          )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>
+          )}
+
+          {isLinked ? (
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <EmailIcon sx={{ color: theme.textColor }} />
-                <Typography variant="body1" sx={{ color: theme.textColor }}>
-                  {user?.email}
-                </Typography>
-              </Box>
-              <Typography variant="body2" sx={{ color: theme.textColor, opacity: 0.7, mb: 2 }}>
-                Email привязан. Теперь вы можете входить в веб-версию с тем же email и видеть свои викторины.
+              <Typography variant="body2" sx={{ color: theme.textColor, opacity: 0.7 }}>
+                Аккаунт привязан к {linkedEmail || 'веб-версии'}. Ваши викторины синхронизированы.
               </Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => setShowEmailForm(true)}
-                sx={{ color: theme.textColor }}
-              >
-                Изменить email
-              </Button>
             </Box>
           ) : (
             <Box>
-              <Typography variant="body2" sx={{ color: theme.textColor, opacity: 0.7, mb: 2 }}>
-                Привяжите email для доступа к своим викторинам в веб-версии
+              <Typography variant="body2" sx={{ color: theme.textColor, opacity: 0.7, mb: 3 }}>
+                Привяжите веб-аккаунт для синхронизации викторин между устройствами
               </Typography>
-              {!showEmailForm ? (
+
+              {/* Generate code for web user */}
+              <Typography variant="subtitle2" sx={{ color: theme.textColor, mb: 1, fontWeight: 'bold' }}>
+                Вариант 1: Сгенерировать код
+              </Typography>
+              <Typography variant="body2" sx={{ color: theme.textColor, opacity: 0.7, mb: 2 }}>
+                Создайте код и введите его в веб-версии (Настройки → Привязать Telegram)
+              </Typography>
+
+              {linkCode ? (
+                <Box sx={{ mb: 3 }}>
+                  <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1,
+                    p: 2,
+                    borderRadius: 2,
+                    backgroundColor: `${theme.buttonColor}20`,
+                    border: `2px dashed ${theme.buttonColor}`,
+                    mb: 1,
+                  }}>
+                    <Typography variant="h4" sx={{
+                      fontWeight: 'bold',
+                      letterSpacing: '0.3em',
+                      color: theme.textColor,
+                      fontFamily: 'monospace',
+                    }}>
+                      {linkCode}
+                    </Typography>
+                    <IconButton onClick={handleCopyCode} size="small" sx={{ color: theme.textColor }}>
+                      <CopyIcon />
+                    </IconButton>
+                  </Box>
+                  {copied && (
+                    <Typography variant="caption" sx={{ color: theme.buttonColor, textAlign: 'center', display: 'block' }}>
+                      Скопировано!
+                    </Typography>
+                  )}
+                  <Typography variant="caption" sx={{ color: theme.textColor, opacity: 0.5, display: 'block', textAlign: 'center' }}>
+                    Код действителен 10 минут
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={handleGenerateCode}
+                    sx={{ mt: 1, color: theme.textColor, borderColor: `${theme.textColor}40` }}
+                    size="small"
+                  >
+                    Создать новый код
+                  </Button>
+                </Box>
+              ) : (
                 <Button
                   variant="contained"
-                  startIcon={<EmailIcon />}
-                  onClick={() => setShowEmailForm(true)}
+                  fullWidth
+                  onClick={handleGenerateCode}
+                  disabled={codeLoading}
                   sx={{
+                    mb: 3,
                     backgroundColor: theme.buttonColor,
                     color: theme.buttonTextColor,
                   }}
                 >
-                  Привязать email
+                  {codeLoading ? <CircularProgress size={24} color="inherit" /> : 'Создать код привязки'}
                 </Button>
-              ) : (
-                <Box sx={{ mt: 2 }}>
-                  {error && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                      {error}
-                    </Alert>
-                  )}
-                  {success && (
-                    <Alert severity="success" sx={{ mb: 2 }}>
-                      Email успешно привязан!
-                    </Alert>
-                  )}
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                    sx={{
-                      mb: 2,
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: theme.secondaryBgColor,
-                        color: theme.textColor,
-                      },
-                      '& .MuiInputLabel-root': {
-                        color: theme.textColor,
-                      },
-                    }}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Пароль"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                    helperText="Минимум 6 символов"
-                    sx={{
-                      mb: 2,
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: theme.secondaryBgColor,
-                        color: theme.textColor,
-                      },
-                      '& .MuiInputLabel-root': {
-                        color: theme.textColor,
-                      },
-                    }}
-                  />
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      variant="contained"
-                      onClick={handleBindEmail}
-                      disabled={loading}
-                      sx={{
-                        backgroundColor: theme.buttonColor,
-                        color: theme.buttonTextColor,
-                      }}
-                    >
-                      {loading ? <CircularProgress size={24} color="inherit" /> : 'Привязать'}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      onClick={() => {
-                        setShowEmailForm(false)
-                        setEmail('')
-                        setPassword('')
-                        setError(null)
-                      }}
-                      disabled={loading}
-                      sx={{ color: theme.textColor }}
-                    >
-                      Отмена
-                    </Button>
-                  </Box>
-                </Box>
               )}
+
+              {/* Enter code from web */}
+              <Typography variant="subtitle2" sx={{ color: theme.textColor, mb: 1, fontWeight: 'bold' }}>
+                Вариант 2: Ввести код
+              </Typography>
+              <Typography variant="body2" sx={{ color: theme.textColor, opacity: 0.7, mb: 2 }}>
+                Если у вас есть код из веб-версии, введите его здесь
+              </Typography>
+
+              <TextField
+                fullWidth
+                label="Код привязки"
+                value={enterCode}
+                onChange={(e) => setEnterCode(e.target.value.toUpperCase())}
+                disabled={enterCodeLoading}
+                placeholder="ABC123"
+                inputProps={{ maxLength: 6, style: { letterSpacing: '0.2em', textAlign: 'center' } }}
+                sx={{ ...inputSx, mb: 2 }}
+              />
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={handleEnterCode}
+                disabled={enterCodeLoading || enterCode.length < 6}
+                sx={{
+                  backgroundColor: theme.buttonColor,
+                  color: theme.buttonTextColor,
+                }}
+              >
+                {enterCodeLoading ? <CircularProgress size={24} color="inherit" /> : 'Привязать'}
+              </Button>
             </Box>
           )}
         </CardContent>
       </Card>
 
+      {/* Sign out card */}
       <Card sx={{ backgroundColor: theme.secondaryBgColor, border: `1px solid ${theme.textColor}20` }}>
         <CardContent>
           <Typography variant="h6" gutterBottom sx={{ color: theme.textColor }}>
             Дополнительно
-          </Typography>
-          <Typography variant="body2" sx={{ color: theme.textColor, opacity: 0.7, mb: 2 }}>
-            Выйдите из аккаунта, чтобы переключиться на другого пользователя
           </Typography>
           <Button
             variant="outlined"
