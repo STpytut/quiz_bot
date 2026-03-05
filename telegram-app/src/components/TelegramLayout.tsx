@@ -10,9 +10,15 @@ export default function TelegramLayout({ children }: TelegramLayoutProps) {
   const { theme, isReady, isTelegram } = useTelegram()
 
   useEffect(() => {
-    if (isTelegram) {
+    if (isTelegram && window.Telegram?.WebApp) {
       document.body.style.backgroundColor = theme.bgColor
       document.body.style.color = theme.textColor
+      
+      const root = document.getElementById('root')
+      if (root) {
+        root.style.backgroundColor = theme.bgColor
+        root.style.minHeight = '100vh'
+      }
     }
   }, [theme, isTelegram])
 

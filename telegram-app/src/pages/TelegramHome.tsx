@@ -7,7 +7,7 @@ export default function TelegramHome() {
   const navigate = useNavigate()
   const { tgUser, theme } = useTelegram()
 
-  return (
+    return (
     <Box>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
         QuizMaster
@@ -58,7 +58,7 @@ export default function TelegramHome() {
               color: theme.buttonTextColor,
             }}
           >
-            Создать из текста
+            Создить из текста
           </Button>
         </CardContent>
       </Card>
@@ -68,10 +68,11 @@ export default function TelegramHome() {
         fullWidth
         size="large"
         onClick={() => navigate('/dashboard')}
-        sx={{ mt: 2 }}
+        sx={{ mt: 2, color: theme.textColor }}
       >
         Мои викторины
       </Button>
     </Box>
   )
 }
+

@@ -8,6 +8,7 @@ import {
   CircularProgress,
   Tabs,
   Tab,
+  Paper,
 } from '@mui/material'
 import { useTelegram } from '../hooks/useTelegram'
 
@@ -83,119 +84,170 @@ export default function EmailBindingDialog({
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', color: theme.textColor }}>
         Добро пожаловать, {tgUser?.first_name || 'Гость'}!
       </Typography>
       
-      <Typography variant="body1" sx={{ mb: 3, opacity: 0.8 }}>
+      <Typography variant="body1" sx={{ mb: 3, opacity: 0.8, color: theme.textColor }}>
         Привяжите email для доступа к своим викторинам на всех устройствах
       </Typography>
 
-      <Tabs
-        value={activeTab}
-        onChange={(_, newValue) => setActiveTab(newValue)}
-        sx={{ mb: 3 }}
-      >
-        <Tab label="Регистрация" />
-        <Tab label="Вход" />
-      </Tabs>
+      <Paper sx={{ mb: 3, p: 2, backgroundColor: theme.secondaryBgColor }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={(_, newValue) => setActiveTab(newValue)}
+          sx={{
+            '& .MuiTabs-root': {
+              color: theme.textColor,
+            },
+          }}
+        >
+          <Tab label="Регистрация" sx={{ color: theme.textColor }} />
+          <Tab label="Вход" sx={{ color: theme.textColor }} />
+        </Tabs>
 
-      {(error || localError) && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {localError || error}
-        </Alert>
-      )}
+        {(error || localError) && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {localError || error}
+          </Alert>
+        )}
 
-      {activeTab === 0 ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-            variant="outlined"
-          />
-          <TextField
-            fullWidth
-            label="Пароль"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-            variant="outlined"
-          />
-          <TextField
-            fullWidth
-            label="Подтвердите пароль"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            disabled={loading}
-            variant="outlined"
-          />
-          <Button
-            fullWidth
-            variant="contained"
-            size="large"
-            onClick={handleSignUp}
-            disabled={loading}
-            sx={{
-              mt: 2,
-              backgroundColor: theme.buttonColor,
-              color: theme.buttonTextColor,
-              '&:hover': {
+        {activeTab === 0 ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: theme.secondaryBgColor,
+                  color: theme.textColor,
+                },
+                '& .MuiInputLabel-root': {
+                  color: theme.textColor,
+                },
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Пароль"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: theme.secondaryBgColor,
+                  color: theme.textColor,
+                },
+                '& .MuiInputLabel-root': {
+                  color: theme.textColor,
+                },
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Подтвердите пароль"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={loading}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: theme.secondaryBgColor,
+                  color: theme.textColor,
+                },
+                '& .MuiInputLabel-root': {
+                  color: theme.textColor,
+                },
+              }}
+            />
+            <Button
+              fullWidth
+              variant="contained"
+              size="large"
+              onClick={handleSignUp}
+              disabled={loading}
+              sx={{
+                mt: 2,
                 backgroundColor: theme.buttonColor,
-                opacity: 0.9,
-              },
-            }}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Зарегистрироваться'}
-          </Button>
-        </Box>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-            variant="outlined"
-          />
-          <TextField
-            fullWidth
-            label="Пароль"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-            variant="outlined"
-          />
-          <Button
-            fullWidth
-            variant="contained"
-            size="large"
-            onClick={handleSignIn}
-            disabled={loading}
-            sx={{
-              mt: 2,
-              backgroundColor: theme.buttonColor,
-              color: theme.buttonTextColor,
-              '&:hover': {
+                color: theme.buttonTextColor,
+                '&:hover': {
+                  backgroundColor: theme.buttonColor,
+                  opacity: 0.9,
+                },
+              }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Зарегистрироваться'}
+            </Button>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: theme.secondaryBgColor,
+                  color: theme.textColor,
+                },
+                '& .MuiInputLabel-root': {
+                  color: theme.textColor,
+                },
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Пароль"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: theme.secondaryBgColor,
+                  color: theme.textColor,
+                },
+                '& .MuiInputLabel-root': {
+                  color: theme.textColor,
+                },
+              }}
+            />
+            <Button
+              fullWidth
+              variant="contained"
+              size="large"
+              onClick={handleSignIn}
+              disabled={loading}
+              sx={{
+                mt: 2,
                 backgroundColor: theme.buttonColor,
-                opacity: 0.9,
-              },
-            }}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Войти'}
-          </Button>
-        </Box>
-      )}
+                color: theme.buttonTextColor,
+                '&:hover': {
+                  backgroundColor: theme.buttonColor,
+                  opacity: 0.9,
+                },
+              }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Войти'}
+            </Button>
+          </Box>
+        )}
+      </Paper>
 
-      <Alert severity="info" sx={{ mt: 3 }}>
+      <Alert severity="info" sx={{ mt: 3, backgroundColor: theme.secondaryBgColor, color: theme.textColor }}>
         Email позволит вам входить в веб-версию и видеть свои викторины на всех устройствах
       </Alert>
     </Box>
