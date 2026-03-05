@@ -26,6 +26,7 @@ export function useTelegramAuth() {
     setError(null)
 
     try {
+      // Проверяем, есть ли связь telegram_id с аккаунтом
       const { data: link, error: linkError } = await supabase
         .from('telegram_auth_links')
         .select('user_id, email, is_verified')
@@ -36,7 +37,8 @@ export function useTelegramAuth() {
         throw linkError
       }
 
-      if (link && link.is_verified) {
+      if (link && link.is_verified && link.user_id) {
+        // Аккаунт уже привязан - создаем сессию
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (sessionError) throw sessionError
@@ -44,10 +46,12 @@ export function useTelegramAuth() {
         if (session?.user) {
           setUser(session.user)
         } else {
-          setNeedsEmailBinding(true)
+          // Если сессии нет, пробуем войти через Telegram ID
+          await createTelegramSession(tgUser.id)
         }
       } else {
-        setNeedsEmailBinding(true)
+        // Первый вход - создаем виртуальный аккаунт через Telegram
+        await createTelegramSession(tgUser.id)
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Ошибка авторизации'
@@ -57,41 +61,100 @@ export function useTelegramAuth() {
     }
   }
 
-  const bindEmail = useCallback(async (email: string, password: string) => {
-    if (!tgUser) {
-      throw new Error('Пользователь Telegram не найден')
+  const createTelegramSession = async (telegramId: number) => {
+    // Создаем виртуальный email на основе Telegram ID
+    const virtualEmail = `telegram_${telegramId}@quizmaster.virtual`
+    const virtualPassword = `tg_${telegramId}_${Date.now()}`
+
+    try {
+      // Пробуем найти существующего пользователя
+      const { data: existingLink } = await supabase
+        .from('telegram_auth_links')
+        .select('user_id')
+        .eq('telegram_id', telegramId)
+        .single()
+
+      if (existingLink?.user_id) {
+        // Пользователь уже существует, обновляем связь
+        const { error: updateError } = await supabase
+          .from('telegram_auth_links')
+          .update({ 
+            telegram_username: tgUser?.username,
+            telegram_first_name: tgUser?.first_name,
+            telegram_last_name: tgUser?.last_name,
+            is_verified: true,
+          })
+          .eq('telegram_id', telegramId)
+
+        if (updateError) throw updateError
+      } else {
+        // Создаем нового пользователя
+        const { data: { user: authUser }, error: signUpError } = await supabase.auth.signUp({
+          email: virtualEmail,
+          password: virtualPassword,
+          options: {
+            data: {
+              telegram_id: telegramId,
+              telegram_username: tgUser?.username,
+            }
+          }
+        })
+
+        if (signUpError) throw signUpError
+
+        if (!authUser) {
+          throw new Error('Не удалось создать аккаунт')
+        }
+
+        // Создаем связь
+        const { error: linkError } = await supabase
+          .from('telegram_auth_links')
+          .insert({
+            user_id: authUser.id,
+            telegram_id: telegramId,
+            telegram_username: tgUser?.username,
+            telegram_first_name: tgUser?.first_name,
+            telegram_last_name: tgUser?.last_name,
+            is_verified: true,
+          })
+
+        if (linkError) throw linkError
+
+        setUser(authUser)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Ошибка создания сессии'
+      setError(message)
+      throw err
+    }
+  }
+
+  const bindEmail = useCallback(async (email: string, _password?: string) => {
+    if (!tgUser || !user) {
+      throw new Error('Пользователь не найден')
     }
 
     setLoading(true)
     setError(null)
 
     try {
-      const { data: { user: authUser }, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
+      // Обновляем email в существующем аккаунте
+      const { error: updateError } = await supabase.auth.updateUser({
+        email: email,
       })
 
-      if (signUpError) throw signUpError
+      if (updateError) throw updateError
 
-      if (!authUser) {
-        throw new Error('Не удалось создать аккаунт')
-      }
-
+      // Обновляем связь
       const { error: linkError } = await supabase
         .from('telegram_auth_links')
-        .insert({
-          user_id: authUser.id,
-          telegram_id: tgUser.id,
-          telegram_username: tgUser.username,
-          telegram_first_name: tgUser.first_name,
-          telegram_last_name: tgUser.last_name,
-          email,
-          is_verified: true,
+        .update({
+          email: email,
         })
+        .eq('telegram_id', tgUser.id)
 
       if (linkError) throw linkError
 
-      setUser(authUser)
       setNeedsEmailBinding(false)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Ошибка при привязке email'
@@ -100,59 +163,12 @@ export function useTelegramAuth() {
     } finally {
       setLoading(false)
     }
-  }, [tgUser])
-
-  const signInWithEmail = useCallback(async (email: string, password: string) => {
-    if (!tgUser) {
-      throw new Error('Пользователь Telegram не найден')
-    }
-
-    setLoading(true)
-    setError(null)
-
-    try {
-      const { data: { user: authUser }, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (signInError) throw signInError
-
-      if (!authUser) {
-        throw new Error('Не удалось войти')
-      }
-
-      const { error: linkError } = await supabase
-        .from('telegram_auth_links')
-        .upsert({
-          user_id: authUser.id,
-          telegram_id: tgUser.id,
-          telegram_username: tgUser.username,
-          telegram_first_name: tgUser.first_name,
-          telegram_last_name: tgUser.last_name,
-          email,
-          is_verified: true,
-        }, {
-          onConflict: 'telegram_id'
-        })
-
-      if (linkError) throw linkError
-
-      setUser(authUser)
-      setNeedsEmailBinding(false)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Ошибка при входе'
-      setError(message)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }, [tgUser])
+  }, [tgUser, user])
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
     setUser(null)
-    setNeedsEmailBinding(true)
+    setNeedsEmailBinding(false)
   }, [])
 
   return {
@@ -161,7 +177,6 @@ export function useTelegramAuth() {
     needsEmailBinding,
     error,
     bindEmail,
-    signInWithEmail,
     signOut,
   }
 }

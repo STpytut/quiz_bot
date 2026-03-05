@@ -1,5 +1,5 @@
-import { Box, Typography, Button, Card, CardContent } from '@mui/material'
-import { Add as AddIcon, AutoAwesome as GenerateIcon } from '@mui/icons-material'
+import { Box, Typography, Button, Card, CardContent, IconButton } from '@mui/material'
+import { Add as AddIcon, AutoAwesome as GenerateIcon, Settings as SettingsIcon } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useTelegram } from '../hooks/useTelegram'
 
@@ -9,9 +9,14 @@ export default function TelegramHome() {
 
     return (
     <Box>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-        QuizMaster
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+          QuizMaster
+        </Typography>
+        <IconButton onClick={() => navigate('/settings')}>
+          <SettingsIcon sx={{ color: theme.textColor }} />
+        </IconButton>
+      </Box>
       
       <Typography variant="body1" sx={{ mb: 4, opacity: 0.8 }}>
         Добро пожаловать, {tgUser?.first_name || 'Гость'}! Создавайте и проходите викторины

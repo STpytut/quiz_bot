@@ -5,7 +5,7 @@ import TelegramLayout from './components/TelegramLayout'
 import TelegramHome from './pages/TelegramHome'
 import TelegramDashboard from './pages/TelegramDashboard'
 import TelegramQuizCreator from './pages/TelegramQuizCreator'
-import EmailBindingDialog from './components/EmailBindingDialog'
+import TelegramSettings from './pages/TelegramSettings'
 import { useTelegramAuth } from './hooks/useTelegramAuth'
 
 const theme = createTheme({
@@ -20,7 +20,7 @@ const theme = createTheme({
 })
 
 export default function App() {
-  const { loading, needsEmailBinding, error, bindEmail, signInWithEmail } = useTelegramAuth()
+  const { loading, error } = useTelegramAuth()
 
   if (loading) {
     return (
@@ -35,17 +35,15 @@ export default function App() {
     )
   }
 
-  if (needsEmailBinding) {
+  if (error) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <TelegramLayout>
-          <EmailBindingDialog
-            onBind={bindEmail}
-            onSignIn={signInWithEmail}
-            error={error}
-            loading={loading}
-          />
+          <div style={{ padding: '20px', color: '#f44336' }}>
+            <h3>Ошибка</h3>
+            <p>{error}</p>
+          </div>
         </TelegramLayout>
       </ThemeProvider>
     )
@@ -85,6 +83,14 @@ export default function App() {
             element={
               <TelegramLayout>
                 <TelegramQuizCreator />
+              </TelegramLayout>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <TelegramLayout>
+                <TelegramSettings />
               </TelegramLayout>
             }
           />
