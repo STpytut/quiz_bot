@@ -7,7 +7,6 @@ import TelegramDashboard from './pages/TelegramDashboard'
 import TelegramQuizCreator from './pages/TelegramQuizCreator'
 import EmailBindingDialog from './components/EmailBindingDialog'
 import { useTelegramAuth } from './hooks/useTelegramAuth'
-import { useTelegram } from './hooks/useTelegram'
 
 const theme = createTheme({
   palette: {
@@ -20,9 +19,8 @@ const theme = createTheme({
   },
 })
 
-function App() {
-  const { user, loading, needsEmailBinding, error, bindEmail, signInWithEmail } = useTelegramAuth()
-  const { theme: tgTheme } = useTelegram()
+export default function App() {
+  const { loading, needsEmailBinding, error, bindEmail, signInWithEmail } = useTelegramAuth()
 
   if (loading) {
     return (

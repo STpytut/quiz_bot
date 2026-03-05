@@ -1,4 +1,4 @@
-import { Box, Typography, Button, Card, CardContent, CircularProgress } from '@mui/material'
+import { Box, Typography, Button, Card, CardContent } from '@mui/material'
 import { Add as AddIcon, AutoAwesome as GenerateIcon } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useTelegram } from '../hooks/useTelegram'
