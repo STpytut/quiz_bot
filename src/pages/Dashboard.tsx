@@ -22,6 +22,7 @@ import {
   Delete as DeleteIcon,
   BarChart as StatsIcon,
   Share as ShareIcon,
+  AutoAwesome as GenerateIcon,
 } from '@mui/icons-material'
 import { useAuth } from '../hooks/useAuth'
 import { useQuiz } from '../hooks/useQuiz'
@@ -98,13 +99,22 @@ export default function Dashboard() {
         <Typography variant="h3" component="h1">
           Мои викторины
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/create')}
-        >
-          Создать викторину
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<GenerateIcon />}
+            onClick={() => navigate('/generate')}
+          >
+            Создать из текста
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/create')}
+          >
+            Создать вручную
+          </Button>
+        </Box>
       </Box>
 
       {quizzes.length === 0 ? (
@@ -113,14 +123,22 @@ export default function Dashboard() {
             <Typography variant="h6" color="text.secondary" gutterBottom>
               Вы еще не создали ни одной викторины
             </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => navigate('/create')}
-              sx={{ mt: 2 }}
-            >
-              Создать первую викторину
-            </Button>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<GenerateIcon />}
+                onClick={() => navigate('/generate')}
+              >
+                Создать из текста
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => navigate('/create')}
+              >
+                Создать вручную
+              </Button>
+            </Box>
           </CardContent>
         </Card>
       ) : (

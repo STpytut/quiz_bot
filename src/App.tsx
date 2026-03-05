@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard'
 import QuizCreator from './pages/QuizCreator'
 import QuizRunner from './pages/QuizRunner'
 import QuizStats from './pages/QuizStats'
+import QuizGeneratorPage from './pages/QuizGeneratorPage'
 
 const theme = createTheme({
   palette: {
@@ -52,6 +53,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Layout><QuizCreator /></Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/generate"
+            element={
+              <PrivateRoute>
+                <Layout><QuizGeneratorPage /></Layout>
               </PrivateRoute>
             }
           />
