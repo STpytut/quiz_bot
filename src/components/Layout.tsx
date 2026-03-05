@@ -8,6 +8,7 @@ import {
   Container,
   Box,
 } from '@mui/material'
+import { Settings as SettingsIcon } from '@mui/icons-material'
 import { useAuth } from '../hooks/useAuth'
 
 interface LayoutProps {
@@ -44,6 +45,14 @@ export default function Layout({ children }: LayoutProps) {
                 sx={{ mr: 1 }}
               >
                 Мои викторины
+              </Button>
+              <Button
+                color="inherit"
+                onClick={() => navigate('/settings')}
+                sx={{ mr: 1 }}
+                startIcon={<SettingsIcon />}
+              >
+                Настройки
               </Button>
               <Button
                 color="inherit"
