@@ -28,52 +28,96 @@ export function useTelegramAuth() {
     const stablePassword = `tg_secure_${tgUser.id}`
 
     try {
-      // Step 1: Try to sign in (returning user)
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      // Step 1: Check if we already have a valid session
+      const { data: { session: existingSession } } = await supabase.auth.getSession()
+      if (existingSession?.user) {
+        setUser(existingSession.user)
+        updateTelegramLink(existingSession.user.id, tgUser.id)
+        return
+      }
+
+      // Step 2: Try sign in with stable password
+      const { data: signInData } = await supabase.auth.signInWithPassword({
         email: virtualEmail,
         password: stablePassword,
       })
 
       if (signInData?.user) {
         setUser(signInData.user)
-        // Update telegram info in background
         updateTelegramLink(signInData.user.id, tgUser.id)
         return
       }
 
-      // Step 2: User doesn't exist yet — sign up
-      if (signInError) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      // Step 3: Sign-in failed. Maybe user exists with old password — reset it
+      const { data: resetData } = await supabase.rpc('reset_telegram_password', {
+        p_telegram_id: tgUser.id,
+        p_new_password: stablePassword,
+      })
+
+      const resetResult = resetData as { success: boolean } | null
+
+      if (resetResult?.success) {
+        // Password reset — try sign in again
+        const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
           email: virtualEmail,
           password: stablePassword,
-          options: {
-            data: {
-              telegram_id: tgUser.id,
-              telegram_username: tgUser.username,
-            }
-          }
         })
 
-        if (signUpError) throw signUpError
-        if (!signUpData.user) throw new Error('Не удалось создать аккаунт')
+        if (retryData?.user) {
+          setUser(retryData.user)
+          updateTelegramLink(retryData.user.id, tgUser.id)
+          return
+        }
 
-        // Create telegram_auth_links entry
-        await supabase
-          .from('telegram_auth_links')
-          .upsert({
-            user_id: signUpData.user.id,
+        if (retryError) throw retryError
+      }
+
+      // Step 4: User truly doesn't exist — sign up
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: virtualEmail,
+        password: stablePassword,
+        options: {
+          data: {
             telegram_id: tgUser.id,
-            telegram_username: tgUser.username || null,
-            telegram_first_name: tgUser.first_name,
-            telegram_last_name: tgUser.last_name || null,
-            is_verified: true,
-          }, {
-            onConflict: 'telegram_id',
-          })
+            telegram_username: tgUser.username,
+          }
+        }
+      })
 
+      if (signUpError) throw signUpError
+      if (!signUpData.user) throw new Error('Не удалось создать аккаунт')
+
+      // If signUp didn't create a session (email not confirmed), try signing in
+      if (!signUpData.session) {
+        const { data: postSignUpData } = await supabase.auth.signInWithPassword({
+          email: virtualEmail,
+          password: stablePassword,
+        })
+        if (postSignUpData?.user) {
+          setUser(postSignUpData.user)
+        } else {
+          setUser(signUpData.user)
+        }
+      } else {
         setUser(signUpData.user)
       }
+
+      // Create telegram_auth_links entry
+      await supabase
+        .from('telegram_auth_links')
+        .upsert({
+          user_id: signUpData.user.id,
+          telegram_id: tgUser.id,
+          telegram_username: tgUser.username || null,
+          telegram_first_name: tgUser.first_name,
+          telegram_last_name: tgUser.last_name || null,
+          is_verified: true,
+        }, {
+          onConflict: 'telegram_id',
+        })
+
     } catch (err) {
+      console.error('Telegram auth error:', err)
       const message = err instanceof Error ? err.message : 'Ошибка авторизации'
       setError(message)
     } finally {
@@ -96,7 +140,7 @@ export function useTelegramAuth() {
           onConflict: 'telegram_id',
         })
     } catch {
-      // Non-critical, don't break the flow
+      // Non-critical
     }
   }
 
