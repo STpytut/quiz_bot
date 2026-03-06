@@ -16,6 +16,8 @@ import {
   TableRow,
   Paper,
   Chip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material'
 import {
   BarChart,
@@ -38,6 +40,9 @@ export default function QuizStats() {
   const { fetchQuizStats } = useQuiz()
   const navigate = useNavigate()
   const { id: quizId } = useParams()
+  
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   useEffect(() => {
     if (quizId) {
@@ -90,27 +95,38 @@ export default function QuizStats() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: { xs: 'flex-start', sm: 'center' }, 
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 2, sm: 0 },
+        mb: 4 
+      }}>
         <Button
           startIcon={<BackIcon />}
           onClick={() => navigate('/dashboard')}
-          sx={{ mr: 2 }}
+          sx={{ mr: { sm: 2 } }}
+          size={isMobile ? "small" : "medium"}
         >
           Назад
         </Button>
-        <Typography variant="h3" component="h1">
+        <Typography 
+          variant="h3" 
+          component="h1"
+          sx={{ fontSize: { xs: '2rem', sm: '3rem' } }}
+        >
           Статистика викторины
         </Typography>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={4}>
           <Card>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+            <CardContent sx={{ textAlign: 'center', p: { xs: 2, sm: 3 } }}>
+              <Typography variant="h6" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 Всего сессий
               </Typography>
-              <Typography variant="h2" color="primary">
+              <Typography variant="h2" color="primary" sx={{ fontSize: { xs: '2.5rem', sm: '3.75rem' } }}>
                 {stats.total_sessions}
               </Typography>
             </CardContent>
@@ -118,11 +134,11 @@ export default function QuizStats() {
         </Grid>
         <Grid item xs={12} sm={4}>
           <Card>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+            <CardContent sx={{ textAlign: 'center', p: { xs: 2, sm: 3 } }}>
+              <Typography variant="h6" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 Средний балл
               </Typography>
-              <Typography variant="h2" color="primary">
+              <Typography variant="h2" color="primary" sx={{ fontSize: { xs: '2.5rem', sm: '3.75rem' } }}>
                 {stats.average_score.toFixed(1)}
               </Typography>
             </CardContent>
@@ -130,11 +146,11 @@ export default function QuizStats() {
         </Grid>
         <Grid item xs={12} sm={4}>
           <Card>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+            <CardContent sx={{ textAlign: 'center', p: { xs: 2, sm: 3 } }}>
+              <Typography variant="h6" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 Процент завершения
               </Typography>
-              <Typography variant="h2" color="primary">
+              <Typography variant="h2" color="primary" sx={{ fontSize: { xs: '2.5rem', sm: '3.75rem' } }}>
                 {stats.completion_rate}%
               </Typography>
             </CardContent>
@@ -143,16 +159,16 @@ export default function QuizStats() {
       </Grid>
 
       <Card sx={{ mb: 4 }}>
-        <CardContent>
-          <Typography variant="h5" gutterBottom>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Typography variant="h5" gutterBottom sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
             Эффективность вопросов
           </Typography>
-          <Box sx={{ width: '100%', height: 400 }}>
+          <Box sx={{ width: '100%', height: { xs: 300, sm: 400 } }}>
             <ResponsiveContainer>
-              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+              <BarChart data={chartData} margin={{ top: 20, right: isMobile ? 0 : 30, left: isMobile ? -20 : 20, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis domain={[0, 100]} />
+                <XAxis dataKey="name" tick={{ fontSize: isMobile ? 12 : 14 }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: isMobile ? 12 : 14 }} />
                 <Tooltip
                   formatter={(value) => [`${value}%`, 'Правильные ответы']}
                   labelFormatter={(label) => {
@@ -171,9 +187,9 @@ export default function QuizStats() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent>
-          <Typography variant="h5" gutterBottom>
+      <Card sx={{ mb: 4 }}>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Typography variant="h5" gutterBottom sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
             Детали вопросов
           </Typography>
           {stats.question_stats.map((question, index) => (
@@ -185,33 +201,42 @@ export default function QuizStats() {
                 borderColor: 'divider',
               }}
             >
-              <Typography variant="subtitle1" gutterBottom>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 500 }}>
                 Вопрос {index + 1}: {question.question_text}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="body2" color="text.secondary">
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' }, 
+                gap: { xs: 1, sm: 2 },
+                mt: 1
+              }}>
+                <Typography variant="body2" color="text.secondary" sx={{ minWidth: '130px' }}>
                   {question.correct_answers} / {question.total_answers} правильных
                 </Typography>
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    height: 8,
-                    bgcolor: 'grey.200',
-                    borderRadius: 4,
-                    overflow: 'hidden',
-                  }}
-                >
+                
+                <Box sx={{ display: 'flex', width: '100%', alignItems: 'center', gap: 2 }}>
                   <Box
                     sx={{
-                      width: `${question.percentage}%`,
-                      height: '100%',
-                      bgcolor: getBarColor(question.percentage),
+                      flexGrow: 1,
+                      height: 8,
+                      bgcolor: 'grey.200',
+                      borderRadius: 4,
+                      overflow: 'hidden',
                     }}
-                  />
+                  >
+                    <Box
+                      sx={{
+                        width: `${question.percentage}%`,
+                        height: '100%',
+                        bgcolor: getBarColor(question.percentage),
+                      }}
+                    />
+                  </Box>
+                  <Typography variant="body2" fontWeight="bold" sx={{ minWidth: '40px', textAlign: 'right' }}>
+                    {Math.round(question.percentage)}%
+                  </Typography>
                 </Box>
-                <Typography variant="body2" fontWeight="bold">
-                  {Math.round(question.percentage)}%
-                </Typography>
               </Box>
             </Box>
           ))}
@@ -220,12 +245,12 @@ export default function QuizStats() {
 
       {stats.participants && stats.participants.length > 0 && (
         <Card>
-          <CardContent>
-            <Typography variant="h5" gutterBottom>
+          <CardContent sx={{ p: { xs: 1, sm: 3 } }}>
+            <Typography variant="h5" gutterBottom sx={{ px: { xs: 1, sm: 0 }, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
               Результаты участников
             </Typography>
-            <TableContainer component={Paper} variant="outlined">
-              <Table>
+            <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
+              <Table size={isMobile ? "small" : "medium"} sx={{ minWidth: 400 }}>
                 <TableHead>
                   <TableRow>
                     <TableCell><strong>Участник</strong></TableCell>
@@ -251,7 +276,7 @@ export default function QuizStats() {
                         <TableCell component="th" scope="row">
                           {participant.participant_name || 'Аноним'}
                         </TableCell>
-                        <TableCell align="center">
+                        <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
                           {participant.score} / {participant.total_questions}
                         </TableCell>
                         <TableCell align="center">
@@ -267,7 +292,7 @@ export default function QuizStats() {
                             }
                           />
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                           <Typography variant="body2" color="text.secondary">
                             {date}
                           </Typography>

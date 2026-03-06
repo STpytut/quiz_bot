@@ -47,10 +47,19 @@ export default function Home() {
 
   return (
     <Box>
-      <Typography variant="h3" component="h1" gutterBottom>
+      <Typography 
+        variant="h3" 
+        component="h1" 
+        gutterBottom
+        sx={{ fontSize: { xs: '2rem', sm: '3rem' } }}
+      >
         Публичные викторины
       </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+      <Typography 
+        variant="body1" 
+        color="text.secondary" 
+        sx={{ mb: 4, fontSize: { xs: '0.9rem', sm: '1rem' } }}
+      >
         Пройдите викторину и проверьте свои знания!
       </Typography>
 
@@ -70,14 +79,15 @@ export default function Home() {
         ) : quizzes.length === 0 ? (
           <Grid item xs={12}>
             <Card>
-              <CardContent sx={{ textAlign: 'center', py: 8 }}>
+              <CardContent sx={{ textAlign: 'center', py: { xs: 4, sm: 8 } }}>
                 <Typography variant="h6" color="text.secondary">
                   Публичные викторины пока недоступны
                 </Typography>
                 <Button
                   variant="contained"
-                  sx={{ mt: 2 }}
+                  sx={{ mt: 3 }}
                   onClick={() => navigate('/login')}
+                  fullWidth={window.innerWidth < 600}
                 >
                   Создать первую викторину
                 </Button>

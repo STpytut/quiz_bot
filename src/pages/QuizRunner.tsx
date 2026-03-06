@@ -167,10 +167,10 @@ export default function QuizRunner() {
 
   if (showNameDialog) {
     return (
-      <Box sx={{ maxWidth: 500, mx: 'auto', mt: 8 }}>
+      <Box sx={{ maxWidth: 500, mx: 'auto', mt: { xs: 4, sm: 8 } }}>
         <Card>
-          <CardContent sx={{ p: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom align="center">
+          <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+            <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}>
               {quiz.title}
             </Typography>
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
@@ -220,14 +220,14 @@ export default function QuizRunner() {
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto' }}>
         <Card>
-          <CardContent sx={{ textAlign: 'center', py: 6 }}>
-            <Typography variant="h3" gutterBottom>
+          <CardContent sx={{ textAlign: 'center', py: { xs: 4, sm: 6 }, px: { xs: 2, sm: 4 } }}>
+            <Typography variant="h3" gutterBottom sx={{ fontSize: { xs: '2rem', sm: '3rem' } }}>
               Викторина завершена!
             </Typography>
             <Typography variant="h5" color="text.secondary" gutterBottom>
               Ваш результат
             </Typography>
-            <Typography variant="h2" color="primary" gutterBottom>
+            <Typography variant="h2" color="primary" gutterBottom sx={{ fontSize: { xs: '3rem', sm: '4rem' } }}>
               {score} / {quiz.questions.length}
             </Typography>
             <Chip
@@ -235,12 +235,12 @@ export default function QuizRunner() {
               color={percentage >= 70 ? 'success' : percentage >= 50 ? 'warning' : 'error'}
               sx={{ fontSize: '1.5rem', py: 3, px: 2 }}
             />
-            <Box sx={{ mt: 4, display: 'flex', gap: 2, justifyContent: 'center' }}>
-              <Button variant="contained" onClick={() => navigate('/')}>
+            <Box sx={{ mt: 4, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, justifyContent: 'center' }}>
+              <Button variant="contained" onClick={() => navigate('/')} fullWidth>
                 На главную
               </Button>
               {user && (
-                <Button variant="outlined" onClick={() => navigate('/dashboard')}>
+                <Button variant="outlined" onClick={() => navigate('/dashboard')} fullWidth>
                   Мои викторины
                 </Button>
               )}
@@ -257,18 +257,20 @@ export default function QuizRunner() {
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="h4">{quiz.title}</Typography>
-          <Typography variant="h6">
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 1, gap: { xs: 1, sm: 0 } }}>
+          <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
+            {quiz.title}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
             Вопрос {currentQuestionIndex + 1} из {quiz.questions.length}
           </Typography>
         </Box>
-        <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4 }} />
+        <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4, mt: { xs: 1, sm: 0 } }} />
       </Box>
 
       <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h5" gutterBottom>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Typography variant="h5" gutterBottom sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
             {currentQuestion.text}
           </Typography>
           <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -299,7 +301,12 @@ export default function QuizRunner() {
                   onClick={() => handleAnswerSelect(answer)}
                   disabled={answerState.showResult}
                   size="large"
-                  sx={{ py: 2, justifyContent: 'flex-start' }}
+                  sx={{ 
+                    py: 2, 
+                    justifyContent: 'flex-start',
+                    textAlign: 'left',
+                    minHeight: '64px'
+                  }}
                   startIcon={icon}
                 >
                   {answer.text}
@@ -311,10 +318,10 @@ export default function QuizRunner() {
       </Card>
 
       {answerState.showResult && (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: 'stretch' }}>
           <Alert
             severity={answerState.isCorrect ? 'success' : 'error'}
-            sx={{ flexGrow: 1, mr: 2 }}
+            sx={{ flexGrow: 1, flex: 1 }}
           >
             {answerState.isCorrect ? 'Правильно!' : 'Неправильно!'}
           </Alert>
@@ -322,6 +329,7 @@ export default function QuizRunner() {
             variant="contained"
             size="large"
             onClick={handleNextQuestion}
+            sx={{ flexShrink: 0, py: { xs: 2, sm: 'auto' } }}
           >
             {currentQuestionIndex < quiz.questions.length - 1 ? 'Следующий вопрос' : 'Завершить викторину'}
           </Button>

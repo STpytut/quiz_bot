@@ -14,6 +14,8 @@ import {
   DialogContentText,
   DialogActions,
   TextField,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material'
 import {
   Telegram as TelegramIcon,
@@ -57,6 +59,9 @@ export default function Settings() {
   const [showEnterCodeDialog, setShowEnterCodeDialog] = useState(false)
   const [enterCode, setEnterCode] = useState('')
   const [enterCodeLoading, setEnterCodeLoading] = useState(false)
+  
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   useEffect(() => {
     if (user) {
@@ -203,7 +208,12 @@ export default function Settings() {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-      <Typography variant="h3" component="h1" gutterBottom>
+      <Typography 
+        variant="h3" 
+        component="h1" 
+        gutterBottom
+        sx={{ fontSize: { xs: '2rem', sm: '3rem' } }}
+      >
         Настройки
       </Typography>
 
@@ -220,11 +230,11 @@ export default function Settings() {
 
       {/* Account info */}
       <Card sx={{ mb: 3 }}>
-        <CardContent>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
           <Typography variant="h6" gutterBottom>
             Аккаунт
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
             Email: {user?.email}
           </Typography>
         </CardContent>
@@ -232,8 +242,14 @@ export default function Settings() {
 
       {/* Telegram linking */}
       <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between', 
+            mb: 2,
+            gap: 2
+          }}>
             <Typography variant="h6">
               Telegram аккаунт
             </Typography>
@@ -247,7 +263,7 @@ export default function Settings() {
           {telegramLink?.is_verified ? (
             <Box>
               {telegramLink.telegram_username && (
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1, wordBreak: 'break-all' }}>
                   Username: @{telegramLink.telegram_username}
                 </Typography>
               )}
@@ -261,6 +277,7 @@ export default function Settings() {
                 variant="outlined"
                 color="error"
                 onClick={handleUnlinkTelegram}
+                fullWidth={isMobile}
               >
                 Отвязать Telegram
               </Button>
@@ -280,13 +297,13 @@ export default function Settings() {
               </Typography>
 
               {linkCode ? (
-                <Box sx={{ mb: 3 }}>
+                <Box sx={{ mb: 4 }}>
                   <Box sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    justifyContent: 'space-between',
                     gap: 1,
-                    p: 2,
+                    p: { xs: 1.5, sm: 2 },
                     borderRadius: 2,
                     backgroundColor: 'rgba(99, 102, 241, 0.1)',
                     border: '2px dashed #6366f1',
@@ -294,28 +311,28 @@ export default function Settings() {
                   }}>
                     <Typography variant="h4" sx={{
                       fontWeight: 'bold',
-                      letterSpacing: '0.3em',
+                      letterSpacing: { xs: '0.1em', sm: '0.3em' },
                       fontFamily: 'monospace',
+                      fontSize: { xs: '1.5rem', sm: '2.125rem' }
                     }}>
                       {linkCode}
                     </Typography>
                     <Button
-                      size="small"
-                      startIcon={<CopyIcon />}
+                      size={isMobile ? "small" : "medium"}
+                      startIcon={!isMobile ? <CopyIcon /> : null}
                       onClick={handleCopyCode}
                     >
-                      {copied ? 'Скопировано!' : 'Копировать'}
+                      {copied ? 'Скопировано!' : (isMobile ? <CopyIcon /> : 'Копировать')}
                     </Button>
                   </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 2 }}>
                     Код действителен 10 минут
                   </Typography>
                   <Button
                     variant="outlined"
-                    fullWidth
+                    fullWidth={isMobile}
                     onClick={handleGenerateCode}
-                    sx={{ mt: 1 }}
-                    size="small"
+                    size={isMobile ? "medium" : "small"}
                   >
                     Создать новый код
                   </Button>
@@ -326,7 +343,8 @@ export default function Settings() {
                   startIcon={<TelegramIcon />}
                   onClick={handleGenerateCode}
                   disabled={codeLoading}
-                  sx={{ mb: 3 }}
+                  sx={{ mb: 4 }}
+                  fullWidth={isMobile}
                 >
                   {codeLoading ? <CircularProgress size={24} color="inherit" /> : 'Создать код привязки'}
                 </Button>
@@ -343,6 +361,7 @@ export default function Settings() {
                 variant="outlined"
                 startIcon={<LinkIcon />}
                 onClick={() => setShowEnterCodeDialog(true)}
+                fullWidth={isMobile}
               >
                 Ввести код
               </Button>
@@ -352,7 +371,12 @@ export default function Settings() {
       </Card>
 
       {/* Enter code dialog */}
-      <Dialog open={showEnterCodeDialog} onClose={() => setShowEnterCodeDialog(false)}>
+      <Dialog 
+        open={showEnterCodeDialog} 
+        onClose={() => setShowEnterCodeDialog(false)}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Ввести код привязки</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
@@ -365,18 +389,31 @@ export default function Settings() {
             onChange={(e) => setEnterCode(e.target.value.toUpperCase())}
             disabled={enterCodeLoading}
             placeholder="ABC123"
-            inputProps={{ maxLength: 6, style: { letterSpacing: '0.2em', textAlign: 'center', fontSize: '1.5em' } }}
+            inputProps={{ 
+              maxLength: 6, 
+              style: { 
+                letterSpacing: '0.2em', 
+                textAlign: 'center', 
+                fontSize: '1.5em',
+                textTransform: 'uppercase'
+              } 
+            }}
             autoFocus
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowEnterCodeDialog(false)}>
+        <DialogActions sx={{ p: 2, flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: { xs: 1, sm: 0 } }}>
+          <Button 
+            onClick={() => setShowEnterCodeDialog(false)}
+            fullWidth={isMobile}
+          >
             Отмена
           </Button>
           <Button
             onClick={handleEnterCode}
             disabled={enterCodeLoading || enterCode.length < 6}
             variant="contained"
+            fullWidth={isMobile}
+            sx={{ ml: { xs: 0, sm: 1 } }}
           >
             {enterCodeLoading ? <CircularProgress size={24} /> : 'Привязать'}
           </Button>

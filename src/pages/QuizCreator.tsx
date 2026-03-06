@@ -218,7 +218,12 @@ export default function QuizCreator() {
 
   return (
     <Box>
-      <Typography variant="h3" component="h1" gutterBottom>
+      <Typography 
+        variant="h3" 
+        component="h1" 
+        gutterBottom
+        sx={{ fontSize: { xs: '2rem', sm: '3rem' } }}
+      >
         {quizId ? 'Редактировать викторину' : 'Создать викторину'}
       </Typography>
 
@@ -262,14 +267,15 @@ export default function QuizCreator() {
         </Card>
 
         {questions.map((question, qIndex) => (
-          <Card key={question.id} sx={{ mb: 3 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+          <Card key={question.id} sx={{ mb: { xs: 2, sm: 3 } }}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
                 <Typography variant="h6">Вопрос {qIndex + 1}</Typography>
                 <IconButton
                   onClick={() => deleteQuestion(qIndex)}
                   color="error"
                   title="Удалить вопрос"
+                  size="small"
                 >
                   <DeleteIcon />
                 </IconButton>
@@ -281,22 +287,31 @@ export default function QuizCreator() {
                 onChange={(e) => updateQuestion(qIndex, e.target.value)}
                 margin="normal"
                 required
+                multiline
               />
               <Divider sx={{ my: 2 }} />
               <Typography variant="subtitle2" gutterBottom>
                 Ответы
               </Typography>
               {question.answers.map((answer, aIndex) => (
-                <Box key={answer.id} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                <Box key={answer.id} sx={{ 
+                  display: 'flex', 
+                  gap: 1, 
+                  mb: 1, 
+                  alignItems: 'center' 
+                }}>
                   <IconButton
                     onClick={() => setCorrectAnswer(qIndex, aIndex)}
                     color={answer.is_correct ? 'success' : 'default'}
                     title="Отметить как правильный ответ"
+                    size="small"
+                    sx={{ p: { xs: 0.5, sm: 1 } }}
                   >
-                    <RadioIcon />
+                    <RadioIcon fontSize="small" />
                   </IconButton>
                   <TextField
                     fullWidth
+                    size="small"
                     label={`Ответ ${aIndex + 1}`}
                     value={answer.text}
                     onChange={(e) => updateAnswer(qIndex, aIndex, e.target.value)}
@@ -306,8 +321,10 @@ export default function QuizCreator() {
                     onClick={() => deleteAnswer(qIndex, aIndex)}
                     color="error"
                     title="Удалить ответ"
+                    size="small"
+                    sx={{ p: { xs: 0.5, sm: 1 } }}
                   >
-                    <DeleteIcon />
+                    <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Box>
               ))}
@@ -315,6 +332,7 @@ export default function QuizCreator() {
                 startIcon={<AddIcon />}
                 onClick={() => addAnswer(qIndex)}
                 sx={{ mt: 1 }}
+                size="small"
               >
                 Добавить ответ
               </Button>
@@ -322,29 +340,38 @@ export default function QuizCreator() {
           </Card>
         ))}
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Box sx={{ mb: 4 }}>
           <Button
             variant="outlined"
             startIcon={<AddIcon />}
             onClick={addQuestion}
+            fullWidth
+            sx={{ py: 1.5 }}
           >
             Добавить вопрос
           </Button>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, 
+          gap: 2,
+          pb: 4
+        }}>
           <Button
             variant="contained"
             type="submit"
             disabled={loading}
             size="large"
+            fullWidth
           >
-            {loading ? 'Сохранение...' : quizId ? 'Обновить викторину' : 'Создать викторину'}
+            {loading ? 'Сохранение...' : quizId ? 'Обновить' : 'Создать'}
           </Button>
           <Button
             variant="outlined"
             onClick={() => navigate('/dashboard')}
             size="large"
+            fullWidth
           >
             Отмена
           </Button>

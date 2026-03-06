@@ -15,6 +15,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -37,9 +39,13 @@ export default function Dashboard() {
   const [quizToDelete, setQuizToDelete] = useState<string | null>(null)
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [quizToShare, setQuizToShare] = useState<string | null>(null)
+  
   const { user } = useAuth()
   const { fetchUserQuizzes, deleteQuiz } = useQuiz()
   const navigate = useNavigate()
+  
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   useEffect(() => {
     if (user) {
@@ -95,15 +101,32 @@ export default function Dashboard() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-        <Typography variant="h3" component="h1">
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' }, 
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        gap: { xs: 2, sm: 0 },
+        mb: { xs: 3, sm: 4 }
+      }}>
+        <Typography 
+          variant="h3" 
+          component="h1"
+          sx={{ fontSize: { xs: '2rem', sm: '3rem' } }}
+        >
           Мои викторины
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 2,
+          width: { xs: '100%', sm: 'auto' }
+        }}>
           <Button
             variant="outlined"
             startIcon={<GenerateIcon />}
             onClick={() => navigate('/generate')}
+            fullWidth={isMobile}
           >
             Создать из текста
           </Button>
@@ -111,6 +134,7 @@ export default function Dashboard() {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => navigate('/create')}
+            fullWidth={isMobile}
           >
             Создать вручную
           </Button>
@@ -119,11 +143,17 @@ export default function Dashboard() {
 
       {quizzes.length === 0 ? (
         <Card>
-          <CardContent sx={{ textAlign: 'center', py: 8 }}>
+          <CardContent sx={{ textAlign: 'center', py: { xs: 4, sm: 8 } }}>
             <Typography variant="h6" color="text.secondary" gutterBottom>
               Вы еще не создали ни одной викторины
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 2 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' }, 
+              gap: 2, 
+              justifyContent: 'center', 
+              mt: 3 
+            }}>
               <Button
                 variant="outlined"
                 startIcon={<GenerateIcon />}
@@ -145,8 +175,8 @@ export default function Dashboard() {
         <Grid container spacing={3}>
           {quizzes.map((quiz) => (
             <Grid item xs={12} sm={6} md={4} key={quiz.id}>
-              <Card>
-                <CardContent>
+              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ flexGrow: 1 }}>
                   <Typography variant="h6" component="h2" gutterBottom>
                     {quiz.title}
                   </Typography>
@@ -157,7 +187,7 @@ export default function Dashboard() {
                   >
                     {quiz.description || 'Нет описания'}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                  <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                     <Chip
                       label={`${(quiz as any).questions?.[0]?.count || 0} вопросов`}
                       size="small"
@@ -171,11 +201,12 @@ export default function Dashboard() {
                       variant="outlined"
                     />
                   </Box>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Box sx={{ display: 'flex', gap: 1, mt: 'auto', pt: 2 }}>
                     <IconButton
                       size="small"
                       onClick={() => navigate(`/edit/${quiz.id}`)}
                       title="Редактировать"
+                      sx={{ bgcolor: 'action.hover' }}
                     >
                       <EditIcon />
                     </IconButton>
@@ -183,6 +214,7 @@ export default function Dashboard() {
                       size="small"
                       onClick={() => navigate(`/stats/${quiz.id}`)}
                       title="Статистика"
+                      sx={{ bgcolor: 'action.hover' }}
                     >
                       <StatsIcon />
                     </IconButton>
@@ -190,6 +222,7 @@ export default function Dashboard() {
                       size="small"
                       onClick={() => handleShareClick(quiz.id)}
                       title="Поделиться"
+                      sx={{ bgcolor: 'action.hover' }}
                     >
                       <ShareIcon />
                     </IconButton>
@@ -198,6 +231,7 @@ export default function Dashboard() {
                       onClick={() => handleDeleteClick(quiz.id)}
                       title="Удалить"
                       color="error"
+                      sx={{ bgcolor: 'error.lighter', ml: 'auto' }}
                     >
                       <DeleteIcon />
                     </IconButton>
